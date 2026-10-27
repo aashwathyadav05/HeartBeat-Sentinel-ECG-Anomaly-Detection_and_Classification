@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-HeartBeat Sentinel is an educational research prototype for explainable ECG anomaly detection. A 1D Convolutional Autoencoder (CAE) is trained exclusively on normal ECG segments to learn a compact representation of "normal" cardiac rhythm. At inference time, segments that deviate from learned normal patterns produce higher reconstruction error and are flagged as potential anomalies. The system provides reconstruction visualizations, point-wise error heatmaps, and an interactive Streamlit dashboard.
+HeartBeat Sentinel is an educational research prototype for explainable ECG anomaly detection. A 1D Convolutional Autoencoder (CAE) is trained exclusively on normal ECG segments to learn a compact representation of "normal" cardiac rhythm. At inference time, segments that deviate from learned normal patterns produce higher reconstruction error and are flagged as potential anomalies. The system provides reconstruction visualizations, point-wise error heatmaps, and an interactive Flask+Streamlit dashboard.
 
 **Important:** This is an educational prototype, not a clinically validated diagnostic device. Do not use for medical diagnosis or treatment decisions.
 
@@ -28,9 +28,9 @@ If the dataset files are missing, obtain ECG5000 from the UCR/TimeseriesClassifi
 ## Project Structure
 ```
 HeartBeat-Sentinel/
-├── data/           # processed artifacts (not committed by default)
-├── notebooks/      # exploratory notebooks
-├── models/         # saved checkpoints (not committed by default)
+├── data/                 # processed artifacts (not committed by default)
+├── notebooks/            # exploratory notebooks
+├── models/               # saved checkpoints (not committed by default)
 ├── src/
 │   ├── data_loader.py
 │   ├── preprocess.py
@@ -39,8 +39,13 @@ HeartBeat-Sentinel/
 │   ├── anomaly_detection.py
 │   ├── evaluate.py
 │   └── visualize.py
-├── app.py          # Streamlit dashboard
+├── app.py                # Streamlit dashboard
 ├── requirements.txt
+├── web/
+│   ├── inference.py
+│   ├── templates/        # index.html
+│   ├── static/           # HTML,CSS pages
+│   ├── app.py            # Flask application
 ├── README.md
 └── .gitignore
 ```
