@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HeartBeat Sentinel - ECG Anomaly Detection</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://cdn.plot.ly/plotly-2.26.0.min.js"></script>
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <h1>HeartBeat Sentinel</h1>
+            <p class="subtitle">Explainable ECG Anomaly Detection using 1D Convolutional Autoencoder</p>
+            <span class="badge">Educational Research Prototype - Not for Clinical Use</span>
+        </div>
+    </header>
+
+    <nav class="nav">
+        <div class="container">
+            <button class="nav-btn active" data-tab="overview">Overview</button>
+            <button class="nav-btn" data-tab="analyzer">ECG Analyzer</button>
+            <button class="nav-btn" data-tab="explorer">Dataset Explorer</button>
+            <button class="nav-btn" data-tab="evaluation">Model Evaluation</button>
+            <button class="nav-btn" data-tab="methodology">Methodology & Limitations</button>
+        </div>
+    </nav>
+
+    <main class="container">
+        <!-- Overview Tab -->
+        <section id="tab-overview" class="tab-content active">
+            <h2>Overview</h2>
+            <div class="grid grid-2">
+                <div class="card">
+                    <h3>Project Information</h3>
+                    <p><strong>Objective:</strong> Detect ECG anomalies by learning normal patterns with a 1D Convolutional Autoencoder and flagging deviations via reconstruction error.</p>
+                    <p><strong>Approach:</strong> Normal-only training (class 1.0) → Reconstruction MSE → Threshold from validation normals</p>
+                    <p><strong>Dataset:</strong> ECG5000 (UCR) - 140-sample ECG segments</p>
+                    <p><strong>Model:</strong> 1D Convolutional Autoencoder (PyTorch)</p>
+                </div>
+                <div class="card">
+                    <h3>System Status</h3>
+                    <div id="health-status" class="status">Loading...</div>
+                    <div class="metrics-grid" id="overview-metrics"></div>
+                </div>
+            </div>
+            <div class="card">
+                <h3>Disclaimer</h3>
+                <p class="warning">⚠️ This is an educational research prototype, not a clinically validated diagnostic device. Do not use for medical diagnosis, treatment decisions, or clinical purposes.</p>
+            </div>
+        </section>
+
+        <!-- Analyzer Tab -->
+        <section id="tab-analyzer" class="tab-content">
+            <h2>ECG Analyzer</h2>
+            <div class="grid grid-2">
+                <div class="card">
+                    <h3>Input</h3>
+                    <div class="form-group">
+                        <label>Load Example from Dataset:</label>
+                        <select id="example-select" class="select">
+                            <option value="">-- Select Example --</option>
+                        </select>
+                        <button id="load-example-btn" class="btn">Load Example</button>
+                    </div>
+                    <div class="form-group">
+                        <label>Or Paste 140 Numeric Values (comma/space separated):</label>
+                        <textarea id="signal-input" class="textarea" placeholder="Enter 140 values..."></textarea>
+                    </div>
+                    <button id="predict-btn" class="btn btn-primary">Run Anomaly Detection</button>
+                    <div id="analyzer-error" class="error" style="display:none;"></div>
+                </div>
+                <div class="card">
+                    <h3>Results</h3>
+                    <div class="result-cards">
+                        <div class="result-card">
+                            <div class="result-label">Reconstruction MSE</div>
+                            <div class="result-value" id="res-mse">-</div>
+                        </div>
+                        <div class="result-card">
+                            <div class="result-label">Threshold</div>
+                            <div class="result-value" id="res-threshold">-</div>
+                        </div>
+                        <div class="result-card">
+                            <div class="result-label">Prediction</div>
+                            <div class="result-value" id="res-pred">-</div>
+                        </div>
+                        <div class="result-card">
+                            <div class="result-label">Anomaly Score</div>
+                            <div class="result-value" id="res-score">-</div>
+                        </div>
+                    </div>
+                    <div id="res-true" style="margin-top:10px;"></div>
+                </div>
+            </div>
+            <div class="card">
+                <h3>Waveform Visualization</h3>
+                <div id="plot-waveform"></div>
+                <div id="plot-error"></div>
+            </div>
+        </section>
+
+        <!-- Explorer Tab -->
+        <section id="tab-explorer" class="tab-content">
+            <h2>Dataset Explorer</h2>
+            <div class="card">
+                <h3>Example Segments</h3>
+                <div id="examples-list" class="examples-grid"></div>
+            </div>
+        </section>
+
+        <!-- Evaluation Tab -->
+        <section id="tab-evaluation" class="tab-content">
+            <h2>Model Evaluation</h2>
+            <div class="grid grid-2">
+                <div class="card">
+                    <h3>Metrics</h3>
+                    <div id="eval-metrics" class="metrics-list"></div>
+                </div>
+                <div class="card">
+                    <h3>Confusion Matrix</h3>
+                    <div id="plot-cm"></div>
+                </div>
+            </div>
+            <div class="card">
+                <h3>Performance Curves</h3>
+                <div id="plot-roc"></div>
+                <div id="plot-pr"></div>
+            </div>
+        </section>
+
+        <!-- Methodology Tab -->
+        <section id="tab-methodology" class="tab-content">
+            <h2>Methodology & Limitations</h2>
+            <div class="card">
+                <h3>Methodology</h3>
+                <ul>
+                    <li><strong>Normal-only Training:</strong> Autoencoder learns to reconstruct class 1.0 segments; anomalies produce higher reconstruction error.</li>
+                    <li><strong>Architecture:</strong> 1D Convolutional Autoencoder with encoder-decoder structure and latent bottleneck.</li>
+                    <li><strong>Reconstruction Error:</strong> Segment-level MSE = mean((x - x̂)²).</li>
+                    <li><strong>Threshold Selection:</strong> Computed from normal validation samples only (e.g., 95th percentile) - not optimized on test set.</li>
+                    <li><strong>Evaluation:</strong> Tested on untouched test set with precision, recall, specificity, F1, AUROC.</li>
+                </ul>
+            </div>
+            <div class="card">
+                <h3>Limitations</h3>
+                <ul class="warning-list">
+                    <li>Educational research prototype only - not a clinical diagnostic system</li>
+                    <li>Detects deviation from learned normal patterns, does not diagnose specific arrhythmias</li>
+                    <li>Threshold-based approach has sensitivity/specificity trade-offs</li>
+                    <li>Evaluated on preprocessed ECG5000 benchmark - may not generalize to raw clinical data</li>
+                    <li>Class overlap can cause false positives and false negatives</li>
+                    <li>No treatment recommendations provided</li>
+                </ul>
+            </div>
+        </section>
+    </main>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
