@@ -1,0 +1,49 @@
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual environments
+env/
+venv/
+ENV/
+.venv/
+
+# Dataset and generated artifacts
+data/
+dataset/
+models/
+*.pt
+*.pth
+*.ckpt
+history.json
+metrics.json
+
+# Jupyter
+.ipynb_checkpoints/
+.ipython/
+
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+secrets/
+
+# Logs
+*.log
+
+# Testing and tooling
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# OS/editor
+.DS_Store
+Thumbs.db
+.vscode/
