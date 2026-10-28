@@ -3,158 +3,304 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HeartBeat Sentinel - ECG Anomaly Detection</title>
+    <meta name="description" content="HeartBeat Sentinel: educational ECG anomaly detection and heart condition classification research prototype.">
+    <title>HeartBeat Sentinel — Integrated ECG Analysis</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <script src="https://cdn.plot.ly/plotly-2.26.0.min.js"></script>
 </head>
 <body>
+    <a class="skip-link" href="#main-content">Skip to main content</a>
+
     <header class="header">
-        <div class="container">
-            <h1>HeartBeat Sentinel</h1>
-            <p class="subtitle">Explainable ECG Anomaly Detection using 1D Convolutional Autoencoder</p>
-            <span class="badge">Educational Research Prototype - Not for Clinical Use</span>
+        <div class="container header-inner">
+            <div>
+                <p class="eyebrow">Educational research prototype</p>
+                <h1>HeartBeat Sentinel</h1>
+                <p class="subtitle"><em>Integrated ECG Anomaly Detection and Heart Condition Classification</em></p>
+            </div>
+            <div class="header-status" aria-live="polite">
+                <span class="badge">Not for clinical use</span>
+                <span id="header-model-status" class="status-chip status-chip-muted">Checking model…</span>
+            </div>
         </div>
     </header>
 
-    <nav class="nav">
-        <div class="container">
-            <button class="nav-btn active" data-tab="overview">Overview</button>
-            <button class="nav-btn" data-tab="analyzer">ECG Analyzer</button>
-            <button class="nav-btn" data-tab="explorer">Dataset Explorer</button>
-            <button class="nav-btn" data-tab="evaluation">Model Evaluation</button>
-            <button class="nav-btn" data-tab="methodology">Methodology & Limitations</button>
+    <nav class="nav" aria-label="Main sections">
+        <div class="container nav-inner" role="tablist">
+            <button class="nav-btn active" data-tab="home" role="tab" aria-selected="true" aria-controls="tab-home">Analyzer</button>
+            <button class="nav-btn" data-tab="legacy" role="tab" aria-selected="false" aria-controls="tab-legacy">ECG5000</button>
+            <button class="nav-btn" data-tab="evaluation" role="tab" aria-selected="false" aria-controls="tab-evaluation">Results &amp; guide</button>
         </div>
     </nav>
 
-    <main class="container">
-        <!-- Overview Tab -->
-        <section id="tab-overview" class="tab-content active">
-            <h2>Overview</h2>
-            <div class="grid grid-2">
-                <div class="card">
-                    <h3>Project Information</h3>
-                    <p><strong>Objective:</strong> Detect ECG anomalies by learning normal patterns with a 1D Convolutional Autoencoder and flagging deviations via reconstruction error.</p>
-                    <p><strong>Approach:</strong> Normal-only training (class 1.0) → Reconstruction MSE → Threshold from validation normals</p>
-                    <p><strong>Dataset:</strong> ECG5000 (UCR) - 140-sample ECG segments</p>
-                    <p><strong>Model:</strong> 1D Convolutional Autoencoder (PyTorch)</p>
+    <main id="main-content" class="container">
+        <!-- ============================ HOME ============================ -->
+        <section id="tab-home" class="tab-content active" role="tabpanel" aria-labelledby="conditions-heading">
+            <div class="intro-band compact-intro">
+                <div>
+                    <h2 id="conditions-heading">PTB-XL ECG analyzer</h2>
+                    <p class="section-lead">Upload a 12-lead ECG to view its reconstruction-based anomaly score and five condition scores.</p>
                 </div>
-                <div class="card">
-                    <h3>System Status</h3>
-                    <div id="health-status" class="status">Loading...</div>
-                    <div class="metrics-grid" id="overview-metrics"></div>
+                <span class="input-contract">12 leads <span>·</span> 100 Hz <span>·</span> 10 seconds</span>
+            </div>
+
+            <details class="guide-disclosure">
+                <summary>Understand the Heart Conditions</summary>
+                <p class="field-hint">These independent PTB-XL categories can coexist. They are model outputs, not confirmed diagnoses.</p>
+                <div class="condition-grid" aria-label="Five target heart condition categories">
+                {% for condition in conditions %}
+                <article class="condition-card" data-category="{{ condition.key }}">
+                    <div class="condition-card-head">
+                        <span class="category-code">{{ condition.key }}</span>
+                        <h3>{{ condition.key }} — {{ condition.name }}</h3>
+                    </div>
+                    <p>{{ condition.description }}</p>
+                </article>
+                {% endfor %}
                 </div>
-            </div>
-            <div class="card">
-                <h3>Disclaimer</h3>
-                <p class="warning">⚠️ This is an educational research prototype, not a clinically validated diagnostic device. Do not use for medical diagnosis, treatment decisions, or clinical purposes.</p>
-            </div>
+            </details>
+
+            <section id="analyze" class="analyze-section" aria-labelledby="analyze-heading">
+                <div class="section-heading-row">
+                    <div>
+                        <h2 id="analyze-heading">Analyze Your ECG</h2>
+                        <p class="section-lead">
+                            One eight-to-twelve second 12-lead recording at 100 Hz. A single shared
+                            encoder produces both the reconstruction-based anomaly result and the five
+                            condition scores.
+                        </p>
+                    </div>
+                    <span class="version-chip" id="artifact-version">Artifact: checking…</span>
+                </div>
+
+                <div id="unified-status" class="status-banner status-banner-info" role="status" aria-live="polite">
+                    Checking for a trained unified PTB-XL model and frozen thresholds…
+                </div>
+
+                <div class="grid grid-2 analyzer-grid">
+                    <div class="card">
+                        <h3>1. Provide a supported ECG</h3>
+                        <p class="input-summary">12×1000 finite ECG values, 100 Hz, standard PTB-XL lead order.</p>
+                        <details class="input-details">
+                            <summary>Input requirements</summary>
+                            <p>Lead order: {{ lead_order | join(', ') }}. Values must be numeric samples in mV. The app does not resample, pad, transpose, or reshape uploads.</p>
+                            <p>Accepted formats: <code>.npy</code>, <code>.csv</code>, <code>.txt</code>, and <code>.json</code>.</p>
+                        </details>
+
+                        <div class="form-group">
+                            <label for="unified-file">Upload an ECG file</label>
+                            <input type="file" id="unified-file" class="file-input" accept=".npy,.csv,.txt,.json">
+                            <p class="field-hint">The server applies the artifact's saved normalization and model preprocessing.</p>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="unified-example-select">Or load a held-out PTB-XL test record</label>
+                            <select id="unified-example-select" class="select">
+                                <option value="">-- Select a test record --</option>
+                            </select>
+                            <p class="field-hint" id="unified-example-note">Test records are used for demonstration and evaluation only.</p>
+                        </div>
+
+                        <details class="advanced-input">
+                            <summary>Or paste a 12-row JSON array</summary>
+                            <label for="unified-signal-input" class="sr-only">Paste a 12 by 1000 ECG JSON array</label>
+                            <textarea id="unified-signal-input" class="textarea" rows="6" placeholder='[ [0.01, 0.02, ... 1000 values], ... 12 rows total ]'></textarea>
+                        </details>
+
+                        <div class="button-row">
+                            <button id="unified-predict-btn" class="btn btn-primary" type="button">Analyze ECG</button>
+                            <button id="unified-clear-btn" class="btn" type="button">Clear</button>
+                        </div>
+                        <div id="unified-error" class="error" role="alert" style="display:none;"></div>
+                    </div>
+
+                    <div class="card">
+                        <h3>2. Integrated results</h3>
+                        <div class="result-section">
+                            <h4>Anomaly detection</h4>
+                            <p class="result-caption">
+                                Reconstruction error measures deviation from learned normal ECG structure.
+                                “Below threshold” does not mean clinically normal; this score does not identify a cause or condition.
+                            </p>
+                            <div class="result-cards">
+                                <div class="result-card">
+                                    <div class="result-label">Reconstruction error</div>
+                                    <div class="result-value" id="unified-anomaly-score">—</div>
+                                </div>
+                                <div class="result-card">
+                                    <div class="result-label">Frozen threshold</div>
+                                    <div class="result-value" id="unified-anomaly-threshold">—</div>
+                                </div>
+                                <div class="result-card">
+                                    <div class="result-label">Anomaly status</div>
+                                    <div class="result-value" id="unified-anomaly-status">—</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="result-section">
+                            <h4>Condition classification</h4>
+                            <p class="result-caption">
+                                Five independent sigmoid scores; a category is flagged when its score reaches
+                                its own validation-tuned threshold. Scores can conflict and are not calibrated clinical probabilities.
+                            </p>
+                            <p id="unified-classifier-conflict" class="conflict-note" role="status" hidden></p>
+                            <div id="unified-condition-results" class="condition-results">
+                                <p class="muted">Run an analysis to see category scores.</p>
+                            </div>
+                            <p id="unified-predicted-summary" class="predicted-summary"></p>
+                        </div>
+
+                        <p class="inline-disclaimer">{{ disclaimer }}</p>
+                    </div>
+                </div>
+
+                <div id="unified-results-panel" class="card results-panel" hidden>
+                    <div class="section-heading-row">
+                        <h3>Reconstruction and error visualization</h3>
+                        <div class="plot-controls">
+                            <label for="unified-lead-select" class="inline-label">Lead</label>
+                            <select id="unified-lead-select" class="select select-compact">
+                                {% for lead in lead_order %}
+                                <option value="{{ lead }}" {% if lead == 'II' %}selected{% endif %}>{{ lead }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div id="plot-unified-reconstruction" class="plot-box" aria-label="Original and reconstructed ECG plot"></div>
+                    <div id="plot-unified-error" class="plot-box" aria-label="Reconstruction error plot"></div>
+                    <div id="plot-unified-scores" class="plot-box" aria-label="Condition score plot"></div>
+
+                    <div class="explain-block">
+                        <h4>Model sensitivity (optional)</h4>
+                        <p class="result-caption">
+                            Temporal occlusion replaces short windows with the training mean and measures
+                            the change in one category logit. It highlights model-sensitive regions, not
+                            causal physiology, and is not a clinical explanation.
+                        </p>
+                        <div class="button-row">
+                            <label for="unified-explain-category" class="inline-label">Category</label>
+                            <select id="unified-explain-category" class="select select-compact">
+                                {% for category in target_order %}
+                                <option value="{{ category }}">{{ category }}</option>
+                                {% endfor %}
+                            </select>
+                            <button id="unified-explain-btn" class="btn" type="button">Show sensitivity</button>
+                        </div>
+                        <div id="unified-explain-note" class="field-hint"></div>
+                        <div id="plot-unified-explain" class="plot-box" aria-label="Category occlusion sensitivity plot"></div>
+                    </div>
+                </div>
+            </section>
         </section>
 
-        <!-- Analyzer Tab -->
-        <section id="tab-analyzer" class="tab-content">
-            <h2>ECG Analyzer</h2>
+        <!-- ============================ LEGACY ============================ -->
+        <section id="tab-legacy" class="tab-content" role="tabpanel">
+            <h2>Legacy ECG5000 Anomaly Model</h2>
+            <div class="card legacy-note">
+                <p>
+                    This is the original 140-sample ECG5000 convolutional autoencoder. It is kept
+                    separately for backward compatibility and is <strong>not</strong> routed into the
+                    12-lead PTB-XL model.
+                </p>
+                <div id="legacy-status" class="status" aria-live="polite">Checking legacy ECG5000 model…</div>
+            </div>
+
             <div class="grid grid-2">
                 <div class="card">
-                    <h3>Input</h3>
+                    <h3>ECG5000 input</h3>
                     <div class="form-group">
-                        <label>Load Example from Dataset:</label>
+                        <label for="example-select">Load a test segment</label>
                         <select id="example-select" class="select">
-                            <option value="">-- Select Example --</option>
+                            <option value="">-- Select example --</option>
                         </select>
-                        <button id="load-example-btn" class="btn">Load Example</button>
+                        <button id="load-example-btn" class="btn" type="button">Load example</button>
                     </div>
                     <div class="form-group">
-                        <label>Or Paste 140 Numeric Values (comma/space separated):</label>
-                        <textarea id="signal-input" class="textarea" placeholder="Enter 140 values..."></textarea>
+                        <label for="signal-input">Or paste exactly 140 numeric values</label>
+                        <textarea id="signal-input" class="textarea" placeholder="Enter 140 comma- or space-separated values…"></textarea>
                     </div>
-                    <button id="predict-btn" class="btn btn-primary">Run Anomaly Detection</button>
-                    <div id="analyzer-error" class="error" style="display:none;"></div>
+                    <button id="predict-btn" class="btn btn-primary" type="button">Run ECG5000 Anomaly Detection</button>
+                    <div id="analyzer-error" class="error" role="alert" style="display:none;"></div>
+                    <p id="legacy-true" class="field-hint"></p>
                 </div>
+
                 <div class="card">
-                    <h3>Results</h3>
+                    <h3>ECG5000 result</h3>
                     <div class="result-cards">
                         <div class="result-card">
                             <div class="result-label">Reconstruction MSE</div>
-                            <div class="result-value" id="res-mse">-</div>
+                            <div class="result-value" id="res-mse">—</div>
                         </div>
                         <div class="result-card">
                             <div class="result-label">Threshold</div>
-                            <div class="result-value" id="res-threshold">-</div>
+                            <div class="result-value" id="res-threshold">—</div>
                         </div>
                         <div class="result-card">
                             <div class="result-label">Prediction</div>
-                            <div class="result-value" id="res-pred">-</div>
+                            <div class="result-value" id="res-pred">—</div>
                         </div>
                         <div class="result-card">
-                            <div class="result-label">Anomaly Score</div>
-                            <div class="result-value" id="res-score">-</div>
+                            <div class="result-label">Anomaly score</div>
+                            <div class="result-value" id="res-score">—</div>
                         </div>
                     </div>
-                    <div id="res-true" style="margin-top:10px;"></div>
+                    <p class="result-caption">
+                        Reconstruction error in ECG5000 input units. It flags deviation from learned
+                        normal segments; it is not a diagnosis.
+                    </p>
                 </div>
             </div>
+
             <div class="card">
-                <h3>Waveform Visualization</h3>
-                <div id="plot-waveform"></div>
-                <div id="plot-error"></div>
+                <h3>ECG5000 waveform</h3>
+                <div id="plot-waveform" class="plot-box"></div>
+                <div id="plot-error" class="plot-box"></div>
             </div>
         </section>
 
-        <!-- Explorer Tab -->
-        <section id="tab-explorer" class="tab-content">
-            <h2>Dataset Explorer</h2>
-            <div class="card">
-                <h3>Example Segments</h3>
-                <div id="examples-list" class="examples-grid"></div>
-            </div>
-        </section>
+        <!-- ============================ EVALUATION ============================ -->
+        <section id="tab-evaluation" class="tab-content" role="tabpanel">
+            <h2>Results &amp; guide</h2>
 
-        <!-- Evaluation Tab -->
-        <section id="tab-evaluation" class="tab-content">
-            <h2>Model Evaluation</h2>
+            <div class="card">
+                <h3>Unified PTB-XL model</h3>
+                <p class="result-caption">
+                    Thresholds are tuned on validation fold 9. Test results are reported only after
+                    thresholds are frozen. Anomaly and condition metrics are separate and are not compared.
+                </p>
+                <div id="unified-eval-content">
+                    <p class="muted">Loading evaluation summary…</p>
+                </div>
+            </div>
+
             <div class="grid grid-2">
                 <div class="card">
-                    <h3>Metrics</h3>
+                    <h3>Legacy ECG5000 metrics</h3>
                     <div id="eval-metrics" class="metrics-list"></div>
                 </div>
                 <div class="card">
-                    <h3>Confusion Matrix</h3>
-                    <div id="plot-cm"></div>
+                    <h3>ECG5000 confusion matrix</h3>
+                    <div id="plot-cm" class="plot-box"></div>
                 </div>
             </div>
-            <div class="card">
-                <h3>Performance Curves</h3>
-                <div id="plot-roc"></div>
-                <div id="plot-pr"></div>
-            </div>
-        </section>
-
-        <!-- Methodology Tab -->
-        <section id="tab-methodology" class="tab-content">
-            <h2>Methodology & Limitations</h2>
-            <div class="card">
-                <h3>Methodology</h3>
-                <ul>
-                    <li><strong>Normal-only Training:</strong> Autoencoder learns to reconstruct class 1.0 segments; anomalies produce higher reconstruction error.</li>
-                    <li><strong>Architecture:</strong> 1D Convolutional Autoencoder with encoder-decoder structure and latent bottleneck.</li>
-                    <li><strong>Reconstruction Error:</strong> Segment-level MSE = mean((x - x̂)²).</li>
-                    <li><strong>Threshold Selection:</strong> Computed from normal validation samples only (e.g., 95th percentile) - not optimized on test set.</li>
-                    <li><strong>Evaluation:</strong> Tested on untouched test set with precision, recall, specificity, F1, AUROC.</li>
-                </ul>
-            </div>
-            <div class="card">
-                <h3>Limitations</h3>
-                <ul class="warning-list">
-                    <li>Educational research prototype only - not a clinical diagnostic system</li>
-                    <li>Detects deviation from learned normal patterns, does not diagnose specific arrhythmias</li>
-                    <li>Threshold-based approach has sensitivity/specificity trade-offs</li>
-                    <li>Evaluated on preprocessed ECG5000 benchmark - may not generalize to raw clinical data</li>
-                    <li>Class overlap can cause false positives and false negatives</li>
-                    <li>No treatment recommendations provided</li>
-                </ul>
-            </div>
+            <details class="method-details">
+                <summary>How it works and limitations</summary>
+                <div class="method-copy">
+                    <p>A shared 1D CNN feeds a reconstruction decoder and five independent classification outputs. Thresholds are selected on validation fold 9; test fold 10 is held out.</p>
+                    <p>Anomaly scores measure reconstruction deviation and do not identify a condition. Class scores are not calibrated probabilities. Occlusion shows model sensitivity, not causal physiology.</p>
+                    <p><strong>Educational research prototype only. Not for diagnosis or treatment decisions.</strong></p>
+                </div>
+            </details>
         </section>
     </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>HeartBeat Sentinel · Educational research prototype · Not a clinical diagnostic device.</p>
+            <p class="muted">Datasets: PTB-XL 1.0.3 and UCR ECG5000. See the README for training and evaluation commands.</p>
+        </div>
+    </footer>
 
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
 </body>
