@@ -1,10 +1,20 @@
+# Core scientific stack
 torch
 numpy
 pandas
-matplotlib
-scikit-learn
-streamlit
-tqdm
-jupyter
 scipy
+scikit-learn
+matplotlib
 seaborn
+tqdm
+
+# ECG5000 + Streamlit dashboard
+jupyter
+streamlit
+
+# Unified PTB-XL service and Flask app
+flask
+wfdb
+
+# Test suite (development only)
+pytest
