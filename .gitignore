@@ -16,11 +16,13 @@ ENV/
 data/
 dataset/
 models/
+artifacts/
 *.pt
 *.pth
 *.ckpt
 history.json
 metrics.json
+latest.json
 
 # Jupyter
 .ipynb_checkpoints/
